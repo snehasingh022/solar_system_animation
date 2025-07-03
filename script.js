@@ -173,6 +173,7 @@ const infoBox = document.createElement('div');
 infoBox.style.cssText = 'position:absolute;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.6);border:1px solid #fff;border-radius:12px;padding:20px;color:#fff;font-family:Orbitron,sans-serif;font-size:14px;width:320px;box-shadow:0 0 20px rgba(255,255,255,0.3);display:none;z-index:1000';
 document.body.appendChild(infoBox);
 
+// Existing click handler remains as is:
 window.addEventListener('click', (event) => {
   if (zoomedIn) return;
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -200,6 +201,38 @@ window.addEventListener('click', (event) => {
     infoBox.style.display = 'block';
   }
 });
+
+// New minimal addition to support touch tap on mobile devices:
+window.addEventListener('touchstart', (event) => {
+  if (zoomedIn) return;
+  if (event.touches.length === 0) return;
+  const touch = event.touches[0];
+  mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(planets);
+  if (intersects.length > 0) {
+    targetPlanet = intersects[0].object;
+    zoomedIn = true;
+    const name = targetPlanet.userData.name;
+    const description = planetDescriptions[name];
+    infoBox.innerHTML = `
+      <h2 style="margin:0 0 10px;text-align:center;font-size:20px;">${name}</h2>
+      <p style="text-align:justify;line-height:1.5">${description}</p>
+      <div style="text-align:center;margin-top:15px;">
+        <button id="backButton" style="padding:6px 12px;background:#000;border:1px solid #fff;border-radius:6px;color:#fff;cursor:pointer;font-family:Orbitron">🔙 Back to Solar View</button>
+      </div>`;
+    document.getElementById('backButton').onclick = () => {
+      zoomedIn = false;
+      targetPlanet = null;
+      camAngle = 0;
+      cameraY = 0;
+      infoBox.style.display = 'none';
+    };
+    infoBox.style.display = 'block';
+  }
+}, { passive: true });
+
 
 // Play/Pause Button
 let isPaused = false;
@@ -290,4 +323,5 @@ window.addEventListener('mousemove', (event) => {
     document.body.style.cursor = 'default';
   }
 });
+
 
